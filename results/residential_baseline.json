@@ -1,0 +1,28 @@
+{
+  "method": "geometric_median_of_distinct_training_positions",
+  "training_positions": 12,
+  "constant_xyz_m": [
+    1.3554741112674473,
+    0.0337365711766447,
+    1.0000000000000002
+  ],
+  "test": {
+    "packets": 5941,
+    "recordings": 4,
+    "mean_distance_m": 1.2625894451632955,
+    "recording_balanced_mean_distance_m": 1.2594952832291733,
+    "median_distance_m": 1.2182056147607156,
+    "p90_distance_m": 2.144791235453675,
+    "axis_mae_m": {
+      "x": 0.9498827757543291,
+      "y": 0.5178309665700779,
+      "z": 2.220446049250313e-16
+    },
+    "per_recording_mean_distance_m": {
+      "1m_off_los_right_1m.csv": 1.0295760572501909,
+      "2_meter_los_person.csv": 0.6454082254521117,
+      "2_walls_2.5m_1_person_behind_the_router_by_1m_collinear_with_los.csv": 2.1447912354536744,
+      "2m_off_Los_left_1m.csv": 1.2182056147607159
+    }
+  }
+}
