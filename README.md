@@ -1,20 +1,45 @@
 # ThroughWi Localization
 
-ThroughWi is an AUB electrical and computer engineering final-year project on device-free indoor localization using Wi-Fi channel state information (CSI) from an ESP32. This repository covers the localization experiments and their data collection.
+ThroughWi is an American University of Beirut electrical and computer engineering final-year project. This repository documents the localization component of the team's Spring 2026 final report, connecting ESP32 CSI acquisition, residential data collection, public-data training, and residential fine-tuning.
 
 **Team** · Hussein Yaacoub, Hassan Khalil, Jihad Mobarak, and Ali Assaad
 
 **Advisor** · Dr. Fadi Zaraket
 
+## Project achievements
+
+- An ESP32 and commodity Wi-Fi access point provide device-free sensing, with active packet triggering and host-side serial logging.
+- The acquisition check recorded 1,500 CSI frames in 150 seconds, or 10 frames/s. The earlier passive implementation obtained approximately 0.2 frames/s.
+- The residential campaign comprises 29 recordings across two homes, with 43,147 cleaned packets and 26,812 position-labeled packets for localization.
+- Three neural regressors were trained on HALOC and fine-tuned on the residential recordings. The Multi-Scale CNN achieved the lowest residential mean Euclidean error among these models, at **1.090 m**.
+
+## Localization results from the report
+
+These figures are the results documented in the ThroughWi Spring 2026 final report, §§7.3 and 7.5.
+
+| Model | HALOC mean error (m) | Residential mean error after fine-tuning (m) |
+| --- | ---: | ---: |
+| Multi-Scale CNN | 2.685 | **1.090** |
+| Deep SE-ResNet | **2.524** | 1.171 |
+| Transformer | 2.581 | 1.389 |
+
+The report's initial HALOC reference models achieved 3.21 m (LightGBM) and 2.84 m (ResNet CNN). HALOC and residential columns describe their respective test domains.
+
+The full FYP report also covers people counting, material classification, and broader project objectives. This repository focuses on localization and its acquisition pipeline.
+
+## Repository contents
+
 | Directory | Contents |
 | --- | --- |
 | [firmware](firmware/) and [capture](capture/) | ESP32 acquisition firmware and Python serial logger |
-| [data](data/) | 29 compressed residential recordings with pseudonymized access-point identifiers, a recording manifest, and the frozen split |
-| [scripts](scripts/) | CSI preparation, geometric-median baseline, and PyTorch training and fine-tuning |
-| [notebooks/historical](notebooks/historical/) | Team notebooks for the original experiments, retained as a reference |
-| [results](results/) | Recomputed baseline and provenance for numbers quoted from the report |
+| [data](data/) | 29 compressed residential recordings, pseudonymized access-point identifiers, recording manifest, and partition assignments |
+| [notebooks/historical](notebooks/historical/) | Original experiment notebooks |
+| [scripts](scripts/) | Preparation, training, fine-tuning, and supplementary evaluation utilities |
+| [results](results/) | Result records and supplementary calculations, with provenance |
 
-## Run the residential baseline
+The original notebooks document the experimental implementation. The standalone scripts are later utilities with some different defaults. See [experiment notes](docs/experiments.md) for the distinction and usage details.
+
+## Prepare the residential data
 
 Use Python 3.10 or later. From the repository root:
 
@@ -22,34 +47,15 @@ Use Python 3.10 or later. From the repository root:
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
-python scripts/prepare_captures.py
-python scripts/baseline.py
+python scripts/prepare_captures.py --byte-order iq
 ```
 
-On Windows PowerShell, activate with `.venv\Scripts\Activate.ps1`. Preparation writes `work/captures.npz` and a per-recording audit. Baseline evaluation writes `work/baseline.json`. The expected test mean is **1.262589 m** over 5,941 packets from four recordings. The mean giving equal weight to each recording is **1.259495 m**.
+On Windows PowerShell, activate with `.venv\Scripts\Activate.ps1`. Preparation writes `work/captures.npz` and a per-recording audit. The explicit `iq` option matches the pairing convention in the original residential cleaning notebook.
 
-## Train or fine-tune
+## Training utilities
 
-Download the six HALOC CSVs from the [official dataset record](https://zenodo.org/records/10715595) into `data/external/HALOC/`. The upstream dataset is distributed separately under its own terms. This workflow follows HALOC's sequence split (0–3 train, 4 validation, 5 test) and derives 128 amplitude and 128 phase values per packet. It is a new implementation. See the [experiment notes](docs/experiments.md) for the distinction from the original preprocessing.
+Download the six HALOC CSVs from the [official dataset record](https://zenodo.org/records/10715595) into `data/external/HALOC/`. HALOC is distributed separately under its own terms.
 
-```bash
-python -m pip install -r requirements-training.txt
-python scripts/prepare_haloc.py data/external/HALOC
-python scripts/train.py work/haloc.npz --out runs/haloc-multiscale --epochs 120
-python scripts/train.py work/captures.npz --out runs/residential-multiscale \
-  --init runs/haloc-multiscale/best.pt --epochs 30 --test
-```
+The standalone runner supports Multi-Scale CNN, Transformer, and SE-ResNet, optional pretrained initialization, validation-based model selection, and checkpoint output with normalization statistics. Its commands and implementation differences are documented in [experiment notes](docs/experiments.md). Results from new runs are separate from the report's recorded results.
 
-CUDA is used when available. To train on residential data from scratch, omit `--init` and choose a new output directory. Use `--model transformer` or `--model se_resnet` to select another architecture. Use the same architecture and CSI byte order in both stages. Training fits normalization on training packets only, saves the best validation checkpoint with its normalization statistics, and evaluates test packets only when `--test` is set. Each run directory includes `best.pt` and `metrics.json`.
-
-## Reported and recomputed results
-
-| Dataset | Method | Mean Euclidean error | Source |
-| --- | --- | ---: | --- |
-| HALOC | Three-model ensemble | 2.44 m | FYP report §7.3 |
-| Residential pilot | Fine-tuned Multi-Scale CNN | 1.09 m | FYP report §7.5 |
-| Residential pilot | Constant geometric median | 1.263 m | [Recomputed from the bundled recordings and split](results/residential_baseline.json) |
-
-The original checkpoints and HALOC preprocessing output are pending recovery. The first two rows record the team's reported results. The HALOC and residential errors come from separate test sets, so their difference does not measure the effect of fine-tuning. The residential labels use a constant height and the test split covers four recordings. See the [data notes](data/README.md) and [experiment notes](docs/experiments.md).
-
-See [capture setup](docs/capture.md) for flashing the board and collecting new data.
+See [capture setup](docs/capture.md) for flashing the board and collecting data, and [data documentation](data/README.md) for the recording inventory.
