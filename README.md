@@ -50,12 +50,26 @@ python -m pip install -r requirements.txt
 python scripts/prepare_captures.py --byte-order iq
 ```
 
-On Windows PowerShell, activate with `.venv\Scripts\Activate.ps1`. Preparation writes `work/captures.npz` and a per-recording audit. The explicit `iq` option matches the pairing convention in the original residential cleaning notebook.
+On Windows PowerShell, activate with `.venv\Scripts\Activate.ps1`. Preparation reads `data/recordings.csv` and the compressed capture files. It writes `work/captures.npz` (features, coordinates, recording identifiers, partition labels, and byte order) and `work/captures_audit.json` (per-recording cleaning counts). The explicit `iq` option matches the pairing convention in the original residential cleaning notebook.
 
 ## Training utilities
 
 Download the six HALOC CSVs from the [official dataset record](https://zenodo.org/records/10715595) into `data/external/HALOC/`. HALOC is distributed separately under its own terms.
 
-The standalone runner supports Multi-Scale CNN, Transformer, and SE-ResNet, optional pretrained initialization, validation-based model selection, and checkpoint output with normalization statistics. Its commands and implementation differences are documented in [experiment notes](docs/experiments.md). Results from new runs are separate from the report's recorded results.
+The standalone runner accepts the prepared NPZ file and supports `--model multiscale`, `--model transformer`, and `--model se_resnet`. Optional `--init` loads a checkpoint produced by this runner with matching architecture and byte order. Normalization is fitted on training packets, and validation mean Euclidean error selects the checkpoint.
+
+| Runner setting | Current script behavior |
+| --- | --- |
+| Epochs | 30 by default; configurable with `--epochs` |
+| Batch size | 128 by default; configurable with `--batch-size` |
+| Optimizer and schedule | AdamW and cosine annealing |
+| Learning rate | 0.0005 with initialization or for Transformer; otherwise 0.001; configurable with `--lr` |
+| Test evaluation | Runs only when `--test` is supplied |
+| Output directory | Required through `--out`; must be a new directory |
+| Saved files | `best.pt` contains model weights and normalization statistics; `metrics.json` contains run settings and training history, plus test metrics when requested |
+
+These are the standalone script settings. The original experiment notebooks contain the training procedure described in the report, including OneCycle scheduling for HALOC training. See [experiment notes](docs/experiments.md) for the implementation details. The report results above retain their original experimental provenance.
+
+The supplementary constant-position utility and its saved calculations remain in the repository as later additions. They are separate from the report's LightGBM and ResNet reference models and from the reported neural localization results.
 
 See [capture setup](docs/capture.md) for flashing the board and collecting data, and [data documentation](data/README.md) for the recording inventory.
