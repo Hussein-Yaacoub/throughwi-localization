@@ -11,6 +11,6 @@ The archive contains 29 study recordings from the team's localization capture ex
 | Localization validation | 2 | 2,983 |
 | Localization test | 4 | 5,941 |
 
-The manifest freezes the historical split obtained by sorting and shuffling the 18 eligible filenames with NumPy RandomState seed 42, then allocating 12/2/4 files. One nominal position, `(2, 0, 1)` m, occurs in train and test under distinct geometries. All residential z labels are 1 m. The test recordings comprise three same-room placements and one placement in a two-wall setup. The split supports a recording-level pilot evaluation. Claims about generalization to unseen positions, rooms, subjects, or height require a separate evaluation.
+The manifest records the split obtained by sorting and shuffling the 18 eligible filenames with NumPy RandomState seed 42, then allocating 12/2/4 files. One nominal position, `(2, 0, 1)` m, occurs in train and test under distinct geometries. All residential z labels are 1 m. The test recordings comprise three same-room placements and one placement in a two-wall setup. The partitioning keeps each continuous recording within a single subset and describes evaluation within the collected residential campaign.
 
-Use the repository as a private project workspace. Review data sharing with the team before releasing the recordings or their metadata publicly.
+The team has approved public release of the repository. The distributed recordings use synthetic access-point aliases. New captures should undergo the same identifier review before being added.
